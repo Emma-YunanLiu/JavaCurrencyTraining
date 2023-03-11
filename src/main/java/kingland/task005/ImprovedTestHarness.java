@@ -1,11 +1,10 @@
 package kingland.task004;
 
-import java.util.concurrent.CountDownLatch;
 
-public class TestHarness {
+public class ImprovedTestHarness {
     public long timeTasks(int nThreads, final Runnable task) throws InterruptedException{
-        final CountDownLatch startGate = new CountDownLatch(1);
-        final CountDownLatch endGate = new CountDownLatch(nThreads);
+        final CyclicBarrier startGate = new CyclicBarrier(1);
+        final CyclicBarrier endGate = new CyclicBarrier(nThreads);
 
         for(int i = 0; i < nThreads; i++) {
             Thread t = new Thread() {
