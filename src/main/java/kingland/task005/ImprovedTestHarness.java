@@ -1,8 +1,8 @@
 package kingland.task005;
 
 
-import java.util.ArrayList;
-import java.util.List;
+import kingland.task007.TimingThreadPool;
+
 import java.util.concurrent.*;
 
 public class ImprovedTestHarness {
@@ -33,6 +33,39 @@ public class ImprovedTestHarness {
             long end = System.nanoTime();
             return end-start;
         } catch (BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    public long timeTasks(int nThreads, int timeoutInSeconds, final Runnable task, boolean shouldStartAllCoreThreads, TimeUnit timeUnit) {
+        final CyclicBarrier startGate = new CyclicBarrier(nThreads + 1);
+        final CyclicBarrier endGate = new CyclicBarrier(nThreads + 1);
+        final ExecutorService executorService = new TimingThreadPool(nThreads, shouldStartAllCoreThreads, timeUnit);
+
+        for(int i = 0; i < nThreads; i++) {
+            executorService.execute(new Thread(() -> {
+                try {
+                    startGate.await();
+                    try {
+                        runTaskWithinPeriod(task, timeoutInSeconds);
+                    } finally {
+                        endGate.await();
+                    }
+                } catch (BrokenBarrierException | InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+
+        }
+        try {
+            startGate.await();
+            long start = System.nanoTime();
+            endGate.await();
+            long end = System.nanoTime();
+            return end-start;
+        } catch (BrokenBarrierException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             executorService.shutdown();
