@@ -9,7 +9,8 @@ import java.util.logging.Logger;
 
 public class TimingThreadPool extends ThreadPoolExecutor {
     private final ThreadLocal<Long> startTime = new ThreadLocal<Long>();
-    private final Logger log = Logger.getLogger("TimingThreadPool");
+    // The Logger should always be static final.
+    private static final Logger log = Logger.getLogger("TimingThreadPool");
     private final AtomicLong numTasks = new AtomicLong();
     private final AtomicLong totalTime = new AtomicLong();
 
