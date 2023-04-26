@@ -1,7 +1,6 @@
-package kingland.task004;
+package kingland.task009;
 
-
-import kingland.task003.ImprovedMap;
+import kingland.task004.PerformanceTestingUsingJMH;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
@@ -10,52 +9,42 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 @Fork(value = 2)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @BenchmarkMode(Mode.Throughput)
-public class PerformanceTestingUsingJMH {
-
+public class PerformanceTesting {
     private static final int THREAD_COUNT = 10;
-
-    private static final int MAP_SIZE_SMALL = 10000;
-    private static final int MAP_SIZE_MEDIUM = 50000;
-    private static final int MAP_SIZE_LARGE = 100000;
+    private static final int LIST_SIZE = 1000;
 
     @Benchmark
-    public static void testSynchronizedMap() throws InterruptedException {
-        putValuesWithMultipleThread(Collections.synchronizedMap(new HashMap<>()));
+    public static void testSynchronizedGrocery() throws InterruptedException {
+        putValuesWithMultipleThread(new SynchronizedGrocery());
     }
 
     @Benchmark
-    public static void testConcurrentHashMap() throws InterruptedException {
-        putValuesWithMultipleThread(new ConcurrentHashMap<>());
-    }
-
-    @Benchmark
-    public static void testImprovedMap() throws InterruptedException {
-        putValuesWithMultipleThread(new ImprovedMap<>(new HashMap<>()));
+    public static void testImprovedSynchronizedGrocery() throws InterruptedException {
+        putValuesWithMultipleThread(new ImprovedSynchronizedGrocery());
     }
 
     public static void main(String[] args) throws IOException, RunnerException {
 //        org.openjdk.jmh.Main.main(args);
         Options opts = new OptionsBuilder()
-                .include(PerformanceTestingUsingJMH.class.getSimpleName())
+                .include(PerformanceTesting.class.getSimpleName())
+                .exclude(PerformanceTestingUsingJMH.class.getSimpleName())
                 .resultFormat(ResultFormatType.JSON)
                 .build();
         new Runner(opts).run();
     }
 
-    private static void putValuesWithMultipleThread(Map<Integer, Integer> map) throws InterruptedException {
+    private static void putValuesWithMultipleThread(Grocery grocery) throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
         CountDownLatch countDownLatch = new CountDownLatch(THREAD_COUNT);
         IntStream.range(0, THREAD_COUNT).forEach(i -> executorService.submit(() -> {
-            IntStream.range(0, MAP_SIZE_MEDIUM).forEach(v -> map.put(v, v));
+            IntStream.range(0, LIST_SIZE).forEach(v -> grocery.addFruit(v, String.valueOf(v)));
+            IntStream.range(0, LIST_SIZE).forEach(v -> grocery.addVegetable(v, String.valueOf(v)));
             countDownLatch.countDown();
         }));
         countDownLatch.await();
